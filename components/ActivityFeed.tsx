@@ -14,6 +14,18 @@ import {
 import { useState } from "react";
 import clsx from "clsx";
 
+interface Activity {
+  _id: string;
+  type: string;
+  description: string;
+  success: boolean;
+  timestamp: number;
+  tokens?: number;
+  model?: string;
+  details?: string;
+  metadata?: Record<string, unknown>;
+}
+
 interface ActivityFeedProps {
   limit?: number;
   compact?: boolean;
@@ -73,7 +85,7 @@ export default function ActivityFeed({ limit = 50, compact = false }: ActivityFe
             No activities recorded yet.
           </div>
         ) : (
-          activities.map((activity) => (
+          activities.map((activity: Activity) => (
             <ActivityItem
               key={activity._id}
               activity={activity}
@@ -102,7 +114,7 @@ function ActivityItem({
   onToggle,
   compact,
 }: {
-  activity: any;
+  activity: Activity;
   expanded: boolean;
   onToggle: () => void;
   compact: boolean;

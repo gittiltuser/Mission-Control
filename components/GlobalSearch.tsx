@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Search, FileText, Brain, CheckSquare, X, Clock } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 import { debounce } from "lodash";
 
@@ -134,7 +135,7 @@ function FilterChip({
   color,
 }: {
   label: string;
-  icon: any;
+  icon: LucideIcon<{ className?: string }>;
   active: boolean;
   onClick: () => void;
   color: string;

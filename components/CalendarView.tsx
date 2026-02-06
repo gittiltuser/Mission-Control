@@ -12,6 +12,20 @@ import {
 } from "date-fns";
 import { ChevronLeft, ChevronRight, Clock, CheckCircle2 } from "lucide-react";
 
+interface Task {
+  _id: string;
+  title: string;
+  status: string;
+  scheduledFor?: number;
+  dueDate?: number;
+}
+
+interface CalendarEvent {
+  _id: string;
+  title: string;
+  startTime: number;
+}
+
 export default function CalendarView() {
   const [currentWeek, setCurrentWeek] = useState(new Date());
 
@@ -147,8 +161,8 @@ function CalendarDay({
   isLastInRow,
 }: {
   date: Date;
-  tasks: any[];
-  events: any[];
+  tasks: Task[];
+  events: CalendarEvent[];
   isLastInRow: boolean;
 }) {
   const isCurrentDay = isToday(date);
