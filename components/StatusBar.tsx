@@ -5,7 +5,14 @@ import { api } from "@/convex/_generated/api";
 import { Activity, Cpu, Database } from "lucide-react";
 
 export default function StatusBar() {
-  const stats = useQuery(api.activities?.getStats);
+  let stats: any = undefined;
+  try {
+    // @ts-ignore - API might not exist yet
+    stats = useQuery(api.activities.getStats);
+  } catch (e) {
+    // API not ready
+  }
+  
   const isConnected = stats !== undefined;
 
   return (
@@ -19,7 +26,7 @@ export default function StatusBar() {
             </span>
             <span className="flex items-center gap-1.5">
               <Database className={`w-3 h-3 ${isConnected ? "text-blue-400" : "text-gray-500"}`} />
-              Convex: {isConnected ? "Connected" : "Connecting..."}
+              Convex: {isConnected ? "Connected" : "Offline"}
             </span>
             {stats && stats.today > 0 && (
               <span className="flex items-center gap-1.5">

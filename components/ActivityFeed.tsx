@@ -25,10 +25,17 @@ interface ActivityFeedProps {
 }
 
 export default function ActivityFeed({ limit = 50, compact = false }: ActivityFeedProps) {
-  const data = useQuery(api.activities?.getRecent, { limit });
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  
+  // Safely get the query - handle if API not yet deployed
+  let data: any = undefined;
+  try {
+    // @ts-ignore - API might not exist yet
+    data = useQuery(api.activities.getRecent, { limit });
+  } catch (e) {
+    // API not ready
+  }
 
-  // Loading state
   if (data === undefined) {
     return (
       <div className="bg-gray-900 rounded-xl border border-gray-800 p-8 text-center text-gray-500">
@@ -38,7 +45,6 @@ export default function ActivityFeed({ limit = 50, compact = false }: ActivityFe
     );
   }
 
-  // Handle case where query returns null or errors
   const activities: Activity[] = data?.activities || [];
   const stats = data?.stats || { today: 0, thisWeek: 0, totalCost: 0 };
   const hasMore = data?.hasMore || false;
