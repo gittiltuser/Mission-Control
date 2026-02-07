@@ -117,7 +117,7 @@ export default function GlobalSearch() {
             <p className="text-sm text-gray-500 mb-3">
               {results.length} results found
             </p>
-            {results.map((result) => (
+            {results.map((result: Record<string, unknown>) => (
               <SearchResultCard key={result._id} result={result} />
             ))}
           </div>
