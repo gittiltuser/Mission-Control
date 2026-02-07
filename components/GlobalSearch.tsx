@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { Search, FileText, Brain, CheckSquare, X, Clock } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { format } from "date-fns";
@@ -20,17 +18,10 @@ interface SearchResult {
 export default function GlobalSearch() {
   const [query, setQuery] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>(["memory", "document", "task"]);
+  const [results] = useState<SearchResult[]>([]);
   
-  let results: any = undefined;
-  try {
-    // @ts-ignore - API might not exist yet
-    results = useQuery(
-      api.search.global,
-      query.length > 2 ? { query, limit: 20, types: selectedTypes } : "skip"
-    );
-  } catch (e) {
-    // API not ready
-  }
+  // TODO: Connect to Convex when deployed
+  // const results = useQuery(api.search.global, query.length > 2 ? { query, limit: 20, types: selectedTypes } : "skip");
 
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
@@ -42,7 +33,7 @@ export default function GlobalSearch() {
     );
   };
 
-  const isLoading = results === undefined && query.length > 2;
+  const isLoading = false;
   const resultList: SearchResult[] = results || [];
 
   return (
@@ -91,6 +82,7 @@ export default function GlobalSearch() {
           <div className="text-center py-12 text-gray-500">
             <p>No results found for "{query}"</p>
             <p className="text-sm mt-2">Try different keywords or check your filters</p>
+            <p className="text-xs mt-4 text-gray-600">Connect to Convex for live search</p>
           </div>
         ) : (
           <div className="space-y-2">

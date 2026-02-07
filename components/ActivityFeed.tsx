@@ -1,7 +1,5 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { format } from "date-fns";
 import { CheckCircle, AlertCircle, FileText, MessageSquare, Settings, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
@@ -26,28 +24,13 @@ interface ActivityFeedProps {
 
 export default function ActivityFeed({ limit = 50, compact = false }: ActivityFeedProps) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [stats] = useState({ today: 0, thisWeek: 0, totalCost: 0 });
   
-  // Safely get the query - handle if API not yet deployed
-  let data: any = undefined;
-  try {
-    // @ts-ignore - API might not exist yet
-    data = useQuery(api.activities.getRecent, { limit });
-  } catch (e) {
-    // API not ready
-  }
+  // TODO: Connect to Convex when deployed
+  // const data = useQuery(api.activities.getRecent, { limit });
 
-  if (data === undefined) {
-    return (
-      <div className="bg-gray-900 rounded-xl border border-gray-800 p-8 text-center text-gray-500">
-        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-4" />
-        Loading activity feed...
-      </div>
-    );
-  }
-
-  const activities: Activity[] = data?.activities || [];
-  const stats = data?.stats || { today: 0, thisWeek: 0, totalCost: 0 };
-  const hasMore = data?.hasMore || false;
+  const hasMore = false;
 
   const toggleExpanded = (id: string) => {
     const newSet = new Set(expandedItems);
@@ -84,6 +67,7 @@ export default function ActivityFeed({ limit = 50, compact = false }: ActivityFe
         {activities.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             No activities recorded yet.
+            <p className="text-sm mt-2">Connect to Convex to see real data.</p>
           </div>
         ) : (
           activities.map((activity) => (
@@ -108,58 +92,31 @@ export default function ActivityFeed({ limit = 50, compact = false }: ActivityFe
   );
 }
 
-function ActivityItem({
-  activity,
-  expanded,
-  onToggle,
-  compact,
-}: {
-  activity: Activity;
-  expanded: boolean;
-  onToggle: () => void;
-  compact: boolean;
-}) {
+function ActivityItem({ activity, expanded, onToggle, compact }: { activity: Activity; expanded: boolean; onToggle: () => void; compact: boolean }) {
   const iconConfig = getActivityIcon(activity.type);
   const hasDetails = activity.details || activity.metadata;
   const Icon = iconConfig.icon;
 
   return (
-    <div className={clsx(
-      "group hover:bg-gray-800/50 transition-colors",
-      compact ? "p-3" : "p-4"
-    )}>
+    <div className={clsx("group hover:bg-gray-800/50 transition-colors", compact ? "p-3" : "p-4")}>
       <div className="flex items-start gap-3">
-        <div className={clsx(
-          "flex-shrink-0 rounded-full p-2",
-          activity.success ? "bg-green-500/10" : "bg-red-500/10"
-        )}>
-          <Icon className={clsx(
-            "w-4 h-4",
-            activity.success ? "text-green-400" : "text-red-400"
-          )} />
+        <div className={clsx("flex-shrink-0 rounded-full p-2", activity.success ? "bg-green-500/10" : "bg-red-500/10")}>
+          <Icon className={clsx("w-4 h-4", activity.success ? "text-green-400" : "text-red-400")} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className={clsx("text-white", compact ? "text-sm" : "font-medium")}>
-                {activity.description}
-              </p>
+              <p className={clsx("text-white", compact ? "text-sm" : "font-medium")}>{activity.description}</p>
               <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
-                <span className="px-1.5 py-0.5 bg-gray-800 rounded">
-                  {formatActivityType(activity.type)}
-                </span>
-                {activity.model && (
-                  <span className="text-gray-600">{activity.model}</span>
-                )}
+                <span className="px-1.5 py-0.5 bg-gray-800 rounded">{formatActivityType(activity.type)}</span>
+                {activity.model && <span className="text-gray-600">{activity.model}</span>}
                 <span>{format(activity.timestamp, "h:mm a")}</span>
                 <span>{format(activity.timestamp, "MMM d, yyyy")}</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {activity.tokens && activity.tokens > 0 && (
-                <span className="text-xs text-gray-600 font-mono">
-                  {activity.tokens.toLocaleString()} tokens
-                </span>
+                <span className="text-xs text-gray-600 font-mono">{activity.tokens.toLocaleString()} tokens</span>
               )}
               {hasDetails && !compact && (
                 <button onClick={onToggle} className="p-1 hover:bg-gray-800 rounded text-gray-500">
@@ -170,17 +127,11 @@ function ActivityItem({
           </div>
           {expanded && hasDetails && !compact && (
             <div className="mt-3 p-3 bg-gray-800/50 rounded-lg text-sm">
-              {activity.details && (
-                <pre className="text-gray-400 font-mono text-xs overflow-x-auto">
-                  {activity.details}
-                </pre>
-              )}
+              {activity.details && <pre className="text-gray-400 font-mono text-xs overflow-x-auto">{activity.details}</pre>}
               {activity.metadata && (
                 <div className="mt-2">
                   <p className="text-xs text-gray-500 mb-1">Metadata:</p>
-                  <pre className="text-gray-400 font-mono text-xs overflow-x-auto">
-                    {JSON.stringify(activity.metadata, null, 2)}
-                  </pre>
+                  <pre className="text-gray-400 font-mono text-xs overflow-x-auto">{JSON.stringify(activity.metadata, null, 2)}</pre>
                 </div>
               )}
             </div>
@@ -204,8 +155,5 @@ function getActivityIcon(type: string) {
 }
 
 function formatActivityType(type: string): string {
-  return type
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+  return type.split("_").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 }

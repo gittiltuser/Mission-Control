@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { format, startOfWeek, endOfWeek, addDays, startOfDay, isToday } from "date-fns";
 import { ChevronLeft, ChevronRight, Clock, CheckCircle2 } from "lucide-react";
 
@@ -22,25 +20,14 @@ interface CalendarEvent {
 
 export default function CalendarView() {
   const [currentWeek, setCurrentWeek] = useState(new Date());
-  const weekStart = useMemo(
-    () => startOfWeek(currentWeek, { weekStartsOn: 0 }).getTime(),
-    [currentWeek]
-  );
-  const weekEnd = useMemo(
-    () => endOfWeek(currentWeek, { weekStartsOn: 0 }).getTime(),
-    [currentWeek]
-  );
+  const [tasks] = useState<Task[]>([]);
+  const [events] = useState<CalendarEvent[]>([]);
+  
+  const weekStart = useMemo(() => startOfWeek(currentWeek, { weekStartsOn: 0 }).getTime(), [currentWeek]);
+  const weekEnd = useMemo(() => endOfWeek(currentWeek, { weekStartsOn: 0 }).getTime(), [currentWeek]);
 
-  let data: any = undefined;
-  try {
-    // @ts-ignore - API might not exist yet
-    data = useQuery(api.tasks.getForWeek, { weekStart, weekEnd });
-  } catch (e) {
-    // API not ready
-  }
-
-  const tasks: Task[] = data?.tasks || [];
-  const events: CalendarEvent[] = data?.events || [];
+  // TODO: Connect to Convex when deployed
+  // const data = useQuery(api.tasks.getForWeek, { weekStart, weekEnd });
 
   const weekDays = useMemo(() => {
     const days = [];
@@ -54,14 +41,6 @@ export default function CalendarView() {
   const goToPreviousWeek = () => setCurrentWeek((prev) => addDays(prev, -7));
   const goToNextWeek = () => setCurrentWeek((prev) => addDays(prev, 7));
   const goToToday = () => setCurrentWeek(new Date());
-
-  if (data === undefined) {
-    return (
-      <div className="bg-gray-900 rounded-xl border border-gray-800 p-8 text-center text-gray-500">
-        Loading calendar...
-      </div>
-    );
-  }
 
   const dayItems = weekDays.map((day) => {
     const dayStart = startOfDay(day).getTime();

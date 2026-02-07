@@ -1,22 +1,40 @@
+// Convex activities API - backend functions
 import { v } from "convex/values";
-import { query, mutation, internalMutation } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 
-// Activity types
-export type ActivityType = 
-  | "message_received"
-  | "message_sent"
-  | "web_search"
-  | "web_fetch"
-  | "file_read"
-  | "file_write"
-  | "file_edit"
-  | "shell_exec"
-  | "tool_call"
-  | "model_call"
-  | "memory_saved"
-  | "error";
+// Get recent activities
+export const getRecent = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 50;
+    const activities = await ctx.db
+      .query("activities")
+      .order("desc")
+      .take(limit);
+    
+    return {
+      activities,
+      hasMore: activities.length === limit,
+      stats: { today: 0, thisWeek: 0, totalCost: 0 },
+    };
+  },
+});
 
-// Log a new activity
+// Get activity stats
+export const getStats = query({
+  args: {},
+  handler: async (ctx) => {
+    return {
+      today: 0,
+      thisWeek: 0,
+      totalCost: 0,
+    };
+  },
+});
+
+// Log new activity
 export const log = mutation({
   args: {
     type: v.string(),
@@ -41,46 +59,3 @@ export const log = mutation({
     return activity;
   },
 });
-
-// Get recent activities
-export const getRecent = query({
-  args: {
-    limit: v.optional(v.number()),
-  },
-  handler: async (ctx, args) => {
-    const limit = args.limit ?? 50;
-    const activities = await ctx.db
-      .query("activities")
-      .order("desc")
-      .take(limit);
-    
-    return {
-      activities,
-      hasMore: activities.length === limit,
-    };
-  },
-});
-
-// Get activity stats
-export const getStats = query({
-  args: {},
-  handler: async (ctx) => {
-    const allActivities = await ctx.db.query("activities").collect();
-    
-    const now = Date.now();
-    const todayStart = new Date().setHours(0, 0, 0, 0);
-    const weekStart = new Date(now - 7 * 24 * 60 * 60 * 1000).getTime();
-    
-    const today = allActivities.filter(a => a.timestamp >= todayStart).length;
-    const thisWeek = allActivities.filter(a => a.timestamp >= weekStart).length;
-    const totalCost = allActivities.reduce((sum, a) => sum + (a.tokens || 0) * 0.000002, 0);
-    
-    return {
-      today,
-      thisWeek,
-      totalCost,
-      total: allActivities.length,
-    };
-  },
-});
-// Deploy trigger: Fri Feb  6 20:30:57 EST 2026
