@@ -1,16 +1,7 @@
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+"use client";
+
 import { format } from "date-fns";
-import {
-  CheckCircle,
-  AlertCircle,
-  FileText,
-  MessageSquare,
-  Settings,
-  RefreshCw,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { CheckCircle, AlertCircle, FileText, MessageSquare, Settings, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import clsx from "clsx";
 
@@ -32,20 +23,12 @@ interface ActivityFeedProps {
 }
 
 export default function ActivityFeed({ limit = 50, compact = false }: ActivityFeedProps) {
-  const data = useQuery(api.activities.getRecent, { limit: limit });
-  const stats = useQuery(api.activities.getStats);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-
-  if (!data || !stats) {
-    return (
-      <div className="p-8 text-center text-gray-500">
-        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-4" />
-        Loading activity feed...
-      </div>
-    );
-  }
-
-  const { activities, hasMore } = data;
+  
+  // Mock data for now - will connect to Convex when backend is ready
+  const activities: Activity[] = [];
+  const stats = { today: 0, thisWeek: 0, totalCost: 0 };
+  const hasMore = false;
 
   const toggleExpanded = (id: string) => {
     const newSet = new Set(expandedItems);
@@ -58,11 +41,11 @@ export default function ActivityFeed({ limit = 50, compact = false }: ActivityFe
   };
 
   return (
-    <div className="bg-dark-900 rounded-xl border border-gray-800">
+    <div className="bg-gray-900 rounded-xl border border-gray-800">
       <div className="p-4 border-b border-gray-800 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-primary-500" />
+            <MessageSquare className="w-5 h-5 text-blue-500" />
             Activity Feed
           </h2>
           {!compact && (
@@ -78,14 +61,14 @@ export default function ActivityFeed({ limit = 50, compact = false }: ActivityFe
           </div>
         )}
       </div>
-
       <div className="divide-y divide-gray-800">
         {activities.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
+            <RefreshCw className="w-6 h-6 mx-auto mb-4" />
             No activities recorded yet.
           </div>
         ) : (
-          activities.map((activity: Activity) => (
+          activities.map((activity) => (
             <ActivityItem
               key={activity._id}
               activity={activity}
@@ -96,10 +79,9 @@ export default function ActivityFeed({ limit = 50, compact = false }: ActivityFe
           ))
         )}
       </div>
-
       {hasMore && !compact && (
         <div className="p-4 border-t border-gray-800 text-center">
-          <button className="text-primary-500 hover:text-primary-400 text-sm">
+          <button className="text-blue-500 hover:text-blue-400 text-sm">
             Load more activities
           </button>
         </div>
@@ -121,29 +103,23 @@ function ActivityItem({
 }) {
   const iconConfig = getActivityIcon(activity.type);
   const hasDetails = activity.details || activity.metadata;
+  const Icon = iconConfig.icon;
 
   return (
-    <div
-      className={clsx(
-        "group hover:bg-gray-800/50 transition-colors",
-        compact ? "p-3" : "p-4"
-      )}
-    >
+    <div className={clsx(
+      "group hover:bg-gray-800/50 transition-colors",
+      compact ? "p-3" : "p-4"
+    )}>
       <div className="flex items-start gap-3">
-        <div
-          className={clsx(
-            "flex-shrink-0 rounded-full p-2",
-            activity.success ? "bg-green-500/10" : "bg-red-500/10"
-          )}
-        >
-          <iconConfig.icon
-            className={clsx(
-              "w-4 h-4",
-              activity.success ? "text-green-400" : "text-red-400"
-            )}
-          />
+        <div className={clsx(
+          "flex-shrink-0 rounded-full p-2",
+          activity.success ? "bg-green-500/10" : "bg-red-500/10"
+        )}>
+          <Icon className={clsx(
+            "w-4 h-4",
+            activity.success ? "text-green-400" : "text-red-400"
+          )} />
         </div>
-
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -161,7 +137,6 @@ function ActivityItem({
                 <span>{format(activity.timestamp, "MMM d, yyyy")}</span>
               </div>
             </div>
-
             <div className="flex items-center gap-2">
               {activity.tokens && activity.tokens > 0 && (
                 <span className="text-xs text-gray-600 font-mono">
@@ -169,20 +144,12 @@ function ActivityItem({
                 </span>
               )}
               {hasDetails && !compact && (
-                <button
-                  onClick={onToggle}
-                  className="p-1 hover:bg-gray-800 rounded text-gray-500"
-                >
-                  {expanded ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
+                <button onClick={onToggle} className="p-1 hover:bg-gray-800 rounded text-gray-500">
+                  {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
               )}
             </div>
           </div>
-
           {expanded && hasDetails && !compact && (
             <div className="mt-3 p-3 bg-gray-800/50 rounded-lg text-sm">
               {activity.details && (
@@ -207,7 +174,7 @@ function ActivityItem({
 }
 
 function getActivityIcon(type: string) {
-  const icons: Record<string, { icon: any }> = {
+  const icons: Record<string, { icon: typeof CheckCircle }> = {
     task_completed: { icon: CheckCircle },
     config_changed: { icon: Settings },
     file_created: { icon: FileText },
