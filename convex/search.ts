@@ -130,7 +130,7 @@ export const suggestions = query({
       ...tasks.flatMap(t => t.tags),
     ];
     
-    const uniqueTags = [...new Set(allTags)];
+    const uniqueTags = Array.from(new Set(allTags));
     const matchingTags = uniqueTags
       .filter(tag => tag.toLowerCase().startsWith(prefix))
       .slice(0, limit);
