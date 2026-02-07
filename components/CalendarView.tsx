@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { format, startOfWeek, endOfWeek, addDays, startOfDay, isToday } from "date-fns";
 import { ChevronLeft, ChevronRight, Clock, CheckCircle2 } from "lucide-react";
 
@@ -29,9 +31,9 @@ export default function CalendarView() {
     [currentWeek]
   );
 
-  // Mock data - will connect to backend when ready
-  const tasks: Task[] = [];
-  const events: CalendarEvent[] = [];
+  const data = useQuery(api.tasks?.getForWeek, { weekStart, weekEnd });
+  const tasks: Task[] = data?.tasks || [];
+  const events: CalendarEvent[] = data?.events || [];
 
   const weekDays = useMemo(() => {
     const days = [];
@@ -45,6 +47,14 @@ export default function CalendarView() {
   const goToPreviousWeek = () => setCurrentWeek((prev) => addDays(prev, -7));
   const goToNextWeek = () => setCurrentWeek((prev) => addDays(prev, 7));
   const goToToday = () => setCurrentWeek(new Date());
+
+  if (data === undefined) {
+    return (
+      <div className="bg-gray-900 rounded-xl border border-gray-800 p-8 text-center text-gray-500">
+        Loading calendar...
+      </div>
+    );
+  }
 
   const dayItems = weekDays.map((day) => {
     const dayStart = startOfDay(day).getTime();

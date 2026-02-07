@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Search, FileText, Brain, CheckSquare, X, Clock } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { format } from "date-fns";
@@ -19,8 +21,10 @@ export default function GlobalSearch() {
   const [query, setQuery] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>(["memory", "document", "task"]);
   
-  // Mock results - will connect to backend when ready
-  const results: SearchResult[] = [];
+  const results = useQuery(
+    api.search?.global,
+    query.length > 2 ? { query, limit: 20, types: selectedTypes } : "skip"
+  );
 
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
@@ -31,6 +35,9 @@ export default function GlobalSearch() {
       prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
   };
+
+  const isLoading = results === undefined && query.length > 2;
+  const resultList: SearchResult[] = results || [];
 
   return (
     <div className="bg-gray-900 rounded-xl border border-gray-800">
@@ -72,15 +79,17 @@ export default function GlobalSearch() {
           <div className="text-center py-12 text-gray-500">
             <p>Type at least 3 characters...</p>
           </div>
-        ) : results.length === 0 ? (
+        ) : isLoading ? (
+          <div className="text-center py-12 text-gray-500">Searching...</div>
+        ) : resultList.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             <p>No results found for "{query}"</p>
             <p className="text-sm mt-2">Try different keywords or check your filters</p>
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-sm text-gray-500 mb-3">{results.length} results found</p>
-            {results.map((result: SearchResult) => (
+            <p className="text-sm text-gray-500 mb-3">{resultList.length} results found</p>
+            {resultList.map((result: SearchResult) => (
               <SearchResultCard key={result._id} result={result} />
             ))}
           </div>

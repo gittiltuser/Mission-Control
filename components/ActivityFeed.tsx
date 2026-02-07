@@ -1,5 +1,7 @@
 "use client";
 
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { format } from "date-fns";
 import { CheckCircle, AlertCircle, FileText, MessageSquare, Settings, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
@@ -23,12 +25,23 @@ interface ActivityFeedProps {
 }
 
 export default function ActivityFeed({ limit = 50, compact = false }: ActivityFeedProps) {
+  const data = useQuery(api.activities?.getRecent, { limit });
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  
-  // Mock data for now - will connect to Convex when backend is ready
-  const activities: Activity[] = [];
-  const stats = { today: 0, thisWeek: 0, totalCost: 0 };
-  const hasMore = false;
+
+  // Loading state
+  if (data === undefined) {
+    return (
+      <div className="bg-gray-900 rounded-xl border border-gray-800 p-8 text-center text-gray-500">
+        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-4" />
+        Loading activity feed...
+      </div>
+    );
+  }
+
+  // Handle case where query returns null or errors
+  const activities: Activity[] = data?.activities || [];
+  const stats = data?.stats || { today: 0, thisWeek: 0, totalCost: 0 };
+  const hasMore = data?.hasMore || false;
 
   const toggleExpanded = (id: string) => {
     const newSet = new Set(expandedItems);
@@ -64,7 +77,6 @@ export default function ActivityFeed({ limit = 50, compact = false }: ActivityFe
       <div className="divide-y divide-gray-800">
         {activities.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            <RefreshCw className="w-6 h-6 mx-auto mb-4" />
             No activities recorded yet.
           </div>
         ) : (
