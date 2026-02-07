@@ -1,31 +1,59 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 
-// Get recent activities with pagination
+// Activity types
+export type ActivityType = 
+  | "message_received"
+  | "message_sent"
+  | "web_search"
+  | "web_fetch"
+  | "file_read"
+  | "file_write"
+  | "file_edit"
+  | "shell_exec"
+  | "tool_call"
+  | "model_call"
+  | "memory_saved"
+  | "error";
+
+// Log a new activity
+export const log = mutation({
+  args: {
+    type: v.string(),
+    description: v.string(),
+    success: v.boolean(),
+    tokens: v.optional(v.number()),
+    model: v.optional(v.string()),
+    details: v.optional(v.string()),
+    metadata: v.optional(v.record(v.any())),
+  },
+  handler: async (ctx, args) => {
+    const activity = await ctx.db.insert("activities", {
+      type: args.type,
+      description: args.description,
+      success: args.success,
+      timestamp: Date.now(),
+      tokens: args.tokens,
+      model: args.model,
+      details: args.details,
+      metadata: args.metadata || {},
+    });
+    return activity;
+  },
+});
+
+// Get recent activities
 export const getRecent = query({
   args: {
     limit: v.optional(v.number()),
-    cursor: v.optional(v.string()),
-    type: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
+    const activities = await ctx.db
+      .query("activities")
+      .order("desc")
+      .take(limit);
     
-    let activities;
-    if (args.type) {
-      activities = await ctx.db
-        .query("activities")
-        .withIndex("by_type", (q) => q.eq("type", args.type))
-        .order("desc")
-        .take(limit);
-    } else {
-      activities = await ctx.db
-        .query("activities")
-        .withIndex("by_timestamp")
-        .order("desc")
-        .take(limit);
-    }
-
     return {
       activities,
       hasMore: activities.length === limit,
@@ -33,56 +61,25 @@ export const getRecent = query({
   },
 });
 
-// Log a new activity
-export const log = mutation({
-  args: {
-    type: v.string(),
-    description: v.string(),
-    details: v.optional(v.string()),
-    metadata: v.optional(v.record(v.string(), v.any())),
-    sessionKey: v.optional(v.string()),
-    model: v.optional(v.string()),
-    tokens: v.optional(v.number()),
-    cost: v.optional(v.number()),
-    success: v.boolean(),
-  },
-  handler: async (ctx, args) => {
-    const id = await ctx.db.insert("activities", {
-      ...args,
-      timestamp: Date.now(),
-    });
-    return id;
-  },
-});
-
 // Get activity stats
 export const getStats = query({
   args: {},
   handler: async (ctx) => {
-    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-
-    const activities = await ctx.db
-      .query("activities")
-      .withIndex("by_timestamp", (q) => q.gt("timestamp", oneWeekAgo))
-      .collect();
-
-    const todayActivities = activities.filter(a => a.timestamp > oneDayAgo);
+    const allActivities = await ctx.db.query("activities").collect();
     
-    const byType: Record<string, number> = {};
-    for (const activity of activities) {
-      byType[activity.type] = (byType[activity.type] || 0) + 1;
-    }
-
-    const totalTokens = activities.reduce((sum, a) => sum + (a.tokens || 0), 0);
-    const totalCost = activities.reduce((sum, a) => sum + (a.cost || 0), 0);
-
+    const now = Date.now();
+    const todayStart = new Date().setHours(0, 0, 0, 0);
+    const weekStart = new Date(now - 7 * 24 * 60 * 60 * 1000).getTime();
+    
+    const today = allActivities.filter(a => a.timestamp >= todayStart).length;
+    const thisWeek = allActivities.filter(a => a.timestamp >= weekStart).length;
+    const totalCost = allActivities.reduce((sum, a) => sum + (a.tokens || 0) * 0.000002, 0);
+    
     return {
-      today: todayActivities.length,
-      thisWeek: activities.length,
-      byType,
-      totalTokens,
+      today,
+      thisWeek,
       totalCost,
+      total: allActivities.length,
     };
   },
 });
