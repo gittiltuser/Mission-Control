@@ -144,7 +144,7 @@ function FilterChip({
   color,
 }: {
   label: string;
-  icon: LucideIcon<{ className?: string }>;
+  icon: LucideIcon;
   active: boolean;
   onClick: () => void;
   color: string;
