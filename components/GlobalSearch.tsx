@@ -6,6 +6,15 @@ import type { LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 import { debounce } from "lodash";
 
+interface SearchResult {
+  _id: string;
+  resultType: string;
+  title?: string;
+  content?: string;
+  updatedAt?: number;
+  tags?: string[];
+  path?: string;
+}
 export default function GlobalSearch() {
   const [query, setQuery] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([
@@ -117,7 +126,7 @@ export default function GlobalSearch() {
             <p className="text-sm text-gray-500 mb-3">
               {results.length} results found
             </p>
-            {results.map((result: Record<string, unknown>) => (
+            {results.map((result: SearchResult) => (
               <SearchResultCard key={result._id} result={result} />
             ))}
           </div>
@@ -163,7 +172,7 @@ function FilterChip({
   );
 }
 
-function SearchResultCard({ result }: { result: any }) {
+function SearchResultCard({ result }: { result: SearchResult }) {
   const type = result.resultType;
 
   return (
