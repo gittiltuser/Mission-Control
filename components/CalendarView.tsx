@@ -74,12 +74,12 @@ export default function CalendarView() {
     const dayStart = startOfDay(day).getTime();
     const dayEnd = dayStart + 24 * 60 * 60 * 1000;
 
-    const dayTasks = tasks.filter((t) => {
+    const dayTasks = tasks.filter((t: Task) => {
       const scheduled = t.scheduledFor || t.dueDate;
       return scheduled && scheduled >= dayStart && scheduled < dayEnd;
     });
 
-    const dayEvents = events.filter((e) => {
+    const dayEvents = events.filter((e: CalendarEvent) => {
       return e.startTime >= dayStart && e.startTime < dayEnd;
     });
 
